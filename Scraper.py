@@ -25,7 +25,8 @@ print()
 print("Uptime")
 print()
 value3 = driver.find_element(by=By.XPATH, value="/html/body/div[1]/div[3]/table[6]").text
-print(value3)
+print((value3.split("\n")[0]).replace(" ", ""))
+print()
 print()
 
 driver.quit()
