@@ -62,6 +62,7 @@ print("Downloaded: " + str(Download) + " Bytes" + " = " + str(Download/1000000) 
 write_api.write(bucket,org,Point("Downloaded").field("Downloaded", Download))
 print()
 
+time.sleep(5)
 print("Upstream")
 print()
 value2 = driver.find_element(by=By.XPATH, value="/html/body/div[1]/div[3]/table[4]").text
@@ -76,7 +77,7 @@ for x in range(1, len(Upstream)):
 print()
 
 
-
+time.sleep(5)
 print("Uptime")
 print()
 value3 = driver.find_element(by=By.XPATH, value="/html/body/div[1]/div[3]/table[6]").text
@@ -91,6 +92,7 @@ print()
 
 
 #///html/body/div[1]/div[3]/text()
+time.sleep(5)
 value4 = driver.find_element(by=By.XPATH, value="/html/body/div[1]/div[3]").text
 start = value4.find("Downstream\n") + len("Downstream\n")
 end = value4.find("DCID")
@@ -102,4 +104,4 @@ if error != "":
 print()
 
 driver.quit()
-
+client.close()
