@@ -1,4 +1,11 @@
+#Arris modem scraper
+#Author: @Majklzbastlirny
+#Date: 2nd of May 2022
+#Version: 1.0
+
+
 from multiprocessing import Value
+from rx import catch
 from selenium import webdriver 
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -7,10 +14,10 @@ from influxdb_client import InfluxDBClient, Point, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
 from ping3 import ping
 import sys
-import signal
 from random import uniform
 from time import sleep
-from interruptingcow import timeout
+from selenium.common.exceptions import TimeoutException
+
 
 
 token = "GIcSmvKUhmOct6cKQ-gGOF7xYDtUPAy4-67OJxwMOcolDf9j92VjF41QDotJ37yUXU9kkAQp-x9P0aqT7XrsGA=="
@@ -28,6 +35,7 @@ ping_result = ping("192.168.100.1", timeout=1, unit='ms')
 if ping_result == None:
     print("Cannot ping modem")
     write_api.write(bucket,org,Point("Status").field("Status", "Cannot ping modem").tag("Modem", "Arris_Modem").tag("Time", datetime.datetime.now()))
+    client.close()
     sys.exit()
 
 else:
@@ -42,10 +50,19 @@ chrome_options.add_argument("--window-size=1920x1080")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--no-sandbox")
 driver = webdriver.Chrome(options=chrome_options)
+driver.set_page_load_timeout(timeout)
 #driver = webdriver.Chrome(options=chrome_options, executable_path='/root/Arris_CM820S-Webscraper/chromedriver')
 URL = "http://192.168.100.1/cgi-bin/status_cgi"
-driver.get(URL)
+print("Scraping started")
 
+try:
+    driver.get(URL)   
+except TimeoutException as e:
+    print("TimeoutException")
+    write_api.write(bucket,org,Point("Status").field("Status", "TimeoutException").tag("Modem", "Arris_Modem").tag("Time", datetime.datetime.now()))
+    driver.quit()
+    client.close()
+    sys.exit()
 
 time.sleep(0.1)
 value1 = driver.find_element(by=By.XPATH, value="/html/body/div[1]/div[3]/table[2]").text
@@ -56,7 +73,8 @@ value3 = driver.find_element(by=By.XPATH, value="/html/body/div[1]/div[3]/table[
 time.sleep(0.1)
 value4 = driver.find_element(by=By.XPATH, value="/html/body/div[1]/div[3]").text
 driver.quit()
-
+print("Scraping finished")
+print()
 
 print("Downstream")
 print()
@@ -77,10 +95,8 @@ write_api.write(bucket,org,Point("Downloaded").field("Downloaded", Download))
 print()
 time.sleep(0.1)
 
-#time.sleep(5)
 print("Upstream")
 print()
-#value2 = driver.find_element(by=By.XPATH, value="/html/body/div[1]/div[3]/table[4]").text
 value2 = value2.replace("----", " 0 0 ")
 Upstream = value2.splitlines()
 for x in range(1, len(Upstream)):
@@ -93,10 +109,8 @@ print()
 
 time.sleep(0.1)
 
-#time.sleep(5)
 print("Uptime")
 print()
-#value3 = driver.find_element(by=By.XPATH, value="/html/body/div[1]/div[3]/table[6]").text
 Uptime = (((value3.split("\n")[0]).replace(" ", "")).replace("SystemUptime:", "").replace("m", "").replace("h", "").replace("d", "")).split(":")
 Uptimes = (int(Uptime[0])*86400) + (int(Uptime[1])*3600) + (int(Uptime[2])*60)
 print(Uptimes)
@@ -107,9 +121,6 @@ print()
 
 
 
-#///html/body/div[1]/div[3]/text()
-#time.sleep(5)
-#value4 = driver.find_element(by=By.XPATH, value="/html/body/div[1]/div[3]").text
 start = value4.find("Downstream\n") + len("Downstream\n")
 end = value4.find("DCID")
 error = value4[start:end]
@@ -118,6 +129,7 @@ if error != "":
     write_api.write(bucket,org,Point("Error").field("Error", error))
 
 print()
+print("Finished")
 
 client.close()
 sys.exit()
