@@ -50,8 +50,8 @@ chrome_options.add_argument("--window-size=1920x1080")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--no-sandbox")
 driver = webdriver.Chrome(options=chrome_options)
-driver.set_page_load_timeout(timeout)
 #driver = webdriver.Chrome(options=chrome_options, executable_path='/root/Arris_CM820S-Webscraper/chromedriver')
+driver.set_page_load_timeout(timeout)
 URL = "http://192.168.100.1/cgi-bin/status_cgi"
 print("Scraping started")
 
